@@ -19,9 +19,13 @@ object DataPrep {
       case ByteType | ShortType | IntegerType | LongType =>
         c.cast(StringType)
 
-      case FloatType | DoubleType | _: DecimalType =>
+      case d: DecimalType =>
         when(c.isNull, lit(null).cast(StringType))
           .otherwise(c.cast(DecimalType(38, 10)).cast(StringType))
+
+      case FloatType | DoubleType =>
+        when(c.isNull, lit(null).cast(StringType))
+          .otherwise(format_number(c, 10))
 
       case DateType =>
         when(c.isNull, lit(null).cast(StringType))
@@ -29,9 +33,16 @@ object DataPrep {
 
       case TimestampType =>
         when(c.isNull, lit(null).cast(StringType))
-          .otherwise(date_format(c, "yyyy-MM-dd HH:mm:ss.SSS"))
+          .otherwise(
+            date_format(
+              to_utc_timestamp(c, "Asia/Ho_Chi_Minh"),
+              "yyyy-MM-dd HH:mm:ss.SSS"
+            )
+          )
+
       case BooleanType =>
-        c.cast(StringType)
+        when(c.isNull, lit(null).cast(StringType))
+          .otherwise(when(c === true, lit("1")).otherwise(lit("0")))
 
       case BinaryType =>
         when(c.isNull, lit(null).cast(StringType))
@@ -77,7 +88,7 @@ object DataPrep {
     require(bucketCount > 0, s"bucketCount must be positive, got $bucketCount")
     require(
       df.columns.contains("row_hash"),
-      "DataFrame must contain 'row_hash' column (call prepare() first)"
+      "DataFrame must contain 'row_hash' column"
     )
 
     df.withColumn(
