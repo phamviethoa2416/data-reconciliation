@@ -5,5 +5,6 @@ case class DatabaseConfig(
                            jdbcUrl: String,
                            user: String,
                            password: String,
+                           driver: String,
                            hdfsBasePath: String,
                          )
