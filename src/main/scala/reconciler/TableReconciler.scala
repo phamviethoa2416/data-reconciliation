@@ -1,17 +1,18 @@
 package reconciler
 
 import config.{AppConfig, DatabaseConfig}
-import model.{CheckStatus, TableReconResult}
+import model.TableReconResult
+import model.types.CheckStatus
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
-import reader.{HdfsMetadataReader, OracleMetadataReader}
+import reader.{HdfsMetadataReader, JdbcMetadataReader}
 import utils.DataPrep
 
 import scala.collection.mutable.ListBuffer
 
 class TableReconciler(
                        dbConfig: DatabaseConfig,
-                       sourceReader: OracleMetadataReader,
+                       sourceReader: JdbcMetadataReader,
                        sinkReader: HdfsMetadataReader,
                        runId: String,
                        runTime: String
@@ -49,11 +50,12 @@ class TableReconciler(
     val sinkRaw = sinkRawOpt.get
 
     val t1 = System.currentTimeMillis()
-    val oracleSchema = sourceReader.getTableSchema(tableName)
+    val sourceSchema = sourceReader.getTableSchema(tableName)
     val hdfsSchema = sinkRaw.schema
     val schemaDiffs = ReconChecks.checkSchema(
       tableName = tableName,
-      oracleSchema = oracleSchema,
+      sourceType = dbConfig.dbType.toLowerCase.trim,
+      sourceSchema = sourceSchema,
       sparkSchema = hdfsSchema
     )
     if (schemaDiffs.nonEmpty) {
@@ -103,8 +105,8 @@ class TableReconciler(
           s"only_in_source=$onlySrcCount",
           s"only_in_sink=$onlySinkCount",
           s"count_mismatch=${rowDiff.countMismatchCount}",
-          s"sample_hashes_src=${srcSample.take(5).map(_.getAs[String]("row_hash")).mkString(",")}",
-          s"sample_hashes_sink=${sinkSample.take(5).map(_.getAs[String]("row_hash")).mkString(",")}"
+          s"sample_hashes_src=${srcSample.take(5).mkString(",")}",
+          s"sample_hashes_sink=${sinkSample.take(5).mkString(",")}"
         ).mkString("|")
 
         results += makeResult(

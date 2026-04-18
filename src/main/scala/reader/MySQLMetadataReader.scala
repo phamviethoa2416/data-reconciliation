@@ -7,7 +7,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import java.util.Properties
 import scala.util.{Failure, Success, Try}
 
-class MySQLMetadataReader(config: DatabaseConfig)(implicit spark: SparkSession) {
+class MySQLMetadataReader(config: DatabaseConfig)(implicit spark: SparkSession) extends JdbcMetadataReader {
   private def jdbcProps: Properties = {
     val props = new Properties()
     props.put("user", config.user)
