@@ -1,8 +1,8 @@
 package config
 
 object AppConfig {
-  val CHECKPOINT_HDFS_PATH: String = "hdfs://path/to/checkpoints"
-  val RESULT_HDFS_PATH: String = "hdfs://path/to/results"
+  val CHECKPOINT_HDFS_PATH: String = "/raw_data/reconciliation/checkpoints"
+  val RESULT_HDFS_PATH: String = "/raw_data/reconciliation/results"
 
   val TABLE_BATCH_SIZE    = 20
   val TABLE_BATCH_PAUSE_MS = 2000L
